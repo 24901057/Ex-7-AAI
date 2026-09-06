@@ -22,79 +22,35 @@ Step 5: Construct the main program to read the paragraph  and perform text summa
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize, sent_tokenize
-from nltk.stem import PorterStemmer
 
-# Download required NLTK resources
 nltk.download('punkt')
 nltk.download('punkt_tab')
 nltk.download('stopwords')
 
+def summarize(text, n=3):
+    stop = set(stopwords.words('english'))
+    words = [w.lower() for w in word_tokenize(text)
+             if w.isalnum() and w.lower() not in stop]
 
-def preprocess_text(text):
-    # Tokenize the text into words
-    words = word_tokenize(text)
-
-    # Remove stopwords and punctuation
-    stop_words = set(stopwords.words('english'))
-    filtered_words = [
-        word for word in words
-        if word.lower() not in stop_words and word.isalnum()
-    ]
-
-    # Stemming
-    stemmer = PorterStemmer()
-    stemmed_words = [stemmer.stem(word) for word in filtered_words]
-
-    return stemmed_words
-
-
-def generate_summary(text, num_sentences=3):
-
+    freq = nltk.FreqDist(words)
     sentences = sent_tokenize(text)
 
-    preprocessed_text = preprocess_text(text)
+    scores = {
+        s: sum(freq[w.lower()] for w in word_tokenize(s)
+               if w.lower() in freq)
+        for s in sentences
+    }
 
-    # Calculate the frequency of each word
-    word_frequencies = nltk.FreqDist(preprocessed_text)
-
-    # Calculate the score for each sentence based on word frequency
-    sentence_scores = {}
-
-    for sentence in sentences:
-        for word, freq in word_frequencies.items():
-            if word in sentence.lower():
-                if sentence not in sentence_scores:
-                    sentence_scores[sentence] = freq
-                else:
-                    sentence_scores[sentence] += freq
-
-    # Select top N sentences with highest scores
-    summary_sentences = sorted(
-        sentence_scores,
-        key=sentence_scores.get,
-        reverse=True
-    )[:num_sentences]
-
-    return ' '.join(summary_sentences)
+    return ' '.join(sorted(scores, key=scores.get, reverse=True)[:n])
 
 
-if __name__ == "__main__":
+text = """Natural language processing (NLP) is a subfield of artificial intelligence.
+NLP is used in chatbots, language understanding, and language generation.
+NLP helps computers understand human language.
+This program demonstrates text summarization using NLP."""
 
-    input_text = """
-    Natural language processing (NLP) is a subfield of artificial intelligence.
-    It involves the development of algorithms and models that enable NLP.
-    NLP is used in various applications, including chatbots, language understanding,
-    and language generation.
-    This program demonstrates a simple text summarization using NLP.
-    """
-
-    summary = generate_summary(input_text)
-
-    print("Original Text:")
-    print(input_text)
-
-    print("\nSummary:")
-    print(summary)
+print("Original Text:\n", text)
+print("\nSummary:\n", summarize(text))
 
 ```
 
